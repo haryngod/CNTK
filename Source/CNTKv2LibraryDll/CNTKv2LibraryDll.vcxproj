@@ -127,6 +127,8 @@
       <DelayLoadDLLs>Cntk.Math$(OutputSuffix)-$(CntkComponentVersion).dll; msmpi.dll;</DelayLoadDLLs>
       <DelayLoadDLLs Condition="!$(IsUWP)">%(DelayLoadDLLs); Cntk.PerformanceProfiler-$(CntkComponentVersion).dll;Cntk.DelayLoadedExtensions-$(CntkComponentVersion).dll</DelayLoadDLLs>
       <OptimizeReferences Condition="'$(Configuration)|$(Platform)'=='Debug_CpuOnly|x64'">false</OptimizeReferences>
+      <ForceFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug_CpuOnly|x64'">MultiplyDefinedSymbolOnly</ForceFileOutput>
+      <ForceFileOutput Condition="'$(Configuration)|$(Platform)'=='Release_CpuOnly|x64'">MultiplyDefinedSymbolOnly</ForceFileOutput>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="$(GpuBuild)">
@@ -139,6 +141,8 @@
     <Link>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(CudaLibPath)</AdditionalLibraryDirectories>
       <ForceFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MultiplyDefinedSymbolOnly</ForceFileOutput>
+      <ForceFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MultiplyDefinedSymbolOnly</ForceFileOutput>
+      <ForceFileOutput Condition="'$(Configuration)|$(Platform)'=='Release_NoOpt|x64'">MultiplyDefinedSymbolOnly</ForceFileOutput>
     </Link>
     <PostBuildEvent>
       <Command>if exist "$(NvmlDll)" xcopy /I /D /Y "$(NvmlDll)" "$(TargetDir)"</Command>
@@ -160,6 +164,12 @@
       <PreprocessorDefinitions>IsUWP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug_UWP|x64'">$(IntDir)\$(ProjectName)\$(ConfigurationName)\%(RelativeDir)</ObjectFileName>
     </ClCompile>
+    <Link>
+      <ForceFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug_UWP|x64'">MultiplyDefinedSymbolOnly</ForceFileOutput>
+    </Link>
+    <Link>
+      <ForceFileOutput Condition="'$(Configuration)|$(Platform)'=='Release_UWP|x64'">MultiplyDefinedSymbolOnly</ForceFileOutput>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="API\CNTKLibrary.h" />

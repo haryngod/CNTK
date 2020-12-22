@@ -4,10 +4,10 @@
 //
 // Program.cs : Tests of CNTK Library C# model training examples.
 //
-using CNTK;
-using CNTK.CSTrainingExamples;
 using System;
 using System.Collections.Generic;
+using CNTK;
+using CNTK.CSTrainingExamples;
 
 namespace CNTK.CNTKLibraryCSTrainingTest
 {
@@ -23,10 +23,10 @@ namespace CNTK.CNTKLibraryCSTrainingTest
             Console.WriteLine("======== Train model using GPU build ========");
 #endif
             List<DeviceDescriptor> devices = new List<DeviceDescriptor>();
-            if (ShouldRunOnCpu())
-            {
-                devices.Add(DeviceDescriptor.CPUDevice);
-            }
+            //if (ShouldRunOnCpu())
+            //{
+            //    devices.Add(DeviceDescriptor.CPUDevice);
+            //}
             if (ShouldRunOnGpu())
             {
                 devices.Add(DeviceDescriptor.GPUDevice(0));
