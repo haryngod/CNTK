@@ -594,7 +594,9 @@ private:
                 workspace.Resize((algo.DeterministicAlgoWorkspaceSize + sizeof(ElemType) - 1) / sizeof(ElemType), 1, 0, false);
                 CUDNN_CALL(deterministicFinder(calgo, algoPerf));
                 assert(calgo == 1);                                 // only one deterministic algorithm will be returned
-                algo.RecordAlgoBatchSizeWorkspaceSize(true, (*algoPerf).algo, batchSize, (*algoPerf).memory);
+                auto res = algoPerf;
+                algo.selectedAlgo = (*res).algo;
+                algo.RecordAlgoBatchSizeWorkspaceSize(true, algo.selectedAlgo, batchSize, (*algoPerf).memory);
                 algo.autotuningState = AutotuningState::Running;    // no further need for tuning since this is deterministic, directly enter running state
             }
             else
@@ -602,11 +604,13 @@ private:
                 // This branch handles two cases: a) When first MB comes through, and b) When input has free dimensions.
                 // If the handling of these two cases changes, we may need to create separate branches for them.
                 CUDNN_CALL(staticFinder(calgo, algoPerf, true));
+                auto res = algoPerf;
+                algo.selectedAlgo = (*res).algo;
                 algo.maxMBSizeSeen = batchSize;
                 // Here MaxAlgoWorkspaceSize is temporarily storing 'possible' need changed by staticFinder.
                 // Thus we don't set maxAlgo records and those will be tuned later.
-				auto res = algoPerf;  
-                algo.RecordAlgoBatchSizeWorkspaceSize(false, (*res).algo, batchSize, 0);
+                algo.RecordAlgoBatchSizeWorkspaceSize(false, algo.selectedAlgo, batchSize, 0);
+                algo.AlgoMathType = (*res).mathType;
                 algo.autotuningState = m_inputHasFreeDimension ? AutotuningState::Running : AutotuningState::PendingTuning;
             }
             return;
@@ -667,7 +671,9 @@ private:
                     fprintf(stderr, "Fall back to use static finder to get the algorithm for convolution\n");
                     CUDNN_CALL(staticFinder(calgo, algoPerf, false));
                     auto res = algoPerf;
-                    algo.RecordAlgoBatchSizeWorkspaceSize(true, (*res).algo, batchSize, curSize);
+                    algo.selectedAlgo = (*res).algo;
+                    algo.RecordAlgoBatchSizeWorkspaceSize(true, algo.selectedAlgo, batchSize, curSize);
+                    algo.AlgoMathType = (*res).mathType;
                     algo.autotuningState = AutotuningState::Running;
                 }
             }
@@ -681,7 +687,9 @@ private:
         {
             CUDNN_CALL(staticFinder(calgo, algoPerf, false));
             auto res = algoPerf;
-            algo.RecordAlgoBatchSizeWorkspaceSize(false, (*res).algo, batchSize, workspace.BufferSize());
+            algo.selectedAlgo = (*res).algo;
+            algo.RecordAlgoBatchSizeWorkspaceSize(false, algo.selectedAlgo, batchSize, workspace.BufferSize());
+            algo.AlgoMathType = (*res).mathType;
             algo.autotuningState = AutotuningState::Running;
         }
         return;

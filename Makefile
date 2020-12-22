@@ -226,13 +226,10 @@ endif
 # Set up nvcc target architectures (will generate code to support them all, i.e. fat-binary, in release mode)
 # In debug mode we only include cubin/PTX for 30 and rely on PTX / JIT to generate the required native cubin format
 # see also http://docs.nvidia.com/cuda/pascal-compatibility-guide/index.html#building-applications-with-pascal-support
-GENCODE_SM30 := -gencode arch=compute_30,code=\"sm_30,compute_30\"
-GENCODE_SM35 := -gencode arch=compute_35,code=\"sm_35,compute_35\"
-GENCODE_SM50 := -gencode arch=compute_50,code=\"sm_50,compute_50\"
-GENCODE_SM52 := -gencode arch=compute_52,code=\"sm_52,compute_52\"
 GENCODE_SM60 := -gencode arch=compute_60,code=\"sm_60,compute_60\"
-GENCODE_SM61 := -gencode arch=compute_61,code=\"sm_61,compute_61\"
 GENCODE_SM70 := -gencode arch=compute_70,code=\"sm_70,compute_70\"
+GENCODE_SM75 := -gencode arch=compute_70,code=\"sm_75,compute_75\"
+GENCODE_SM80 := -gencode arch=compute_70,code=\"sm_80,compute_80\"
 
 # Should we relocate *.gcno and *.gcda files using -fprofile-dir option?
 # Use GCOV_PREFIX and GCOV_PREFIX_STRIP if relocating:
