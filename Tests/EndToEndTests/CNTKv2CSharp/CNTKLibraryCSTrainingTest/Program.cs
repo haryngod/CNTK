@@ -130,6 +130,8 @@ namespace CNTK.CNTKLibraryCSTrainingTest
             Console.WriteLine($"======== running MNISTClassifier.TrainAndEvaluate using {device.Type} with convolution neural network ========");
             MNISTClassifier.TrainAndEvaluate(device, true, true);
 
+            Console.Read();
+
             //if (device.Type == DeviceKind.GPU)
             //{
             //    Console.WriteLine($"======== running CifarResNet.TrainAndEvaluate using {device.Type} ========");
