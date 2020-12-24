@@ -291,7 +291,7 @@ protected:
         auto staticFinder = [&, this](int& calgo, cudnnConvolutionFwdAlgoPerf_t algoPerf[MaxAlgoCount], bool noMem) -> cudnnStatus_t {
             if (!noMem)
                 return cudnnFindConvolutionForwardAlgorithm(*m_cudnn, m_inT, *m_kernelT, *m_conv, m_outT, MaxAlgoCount, &calgo, algoPerf);
-            return cudnnFindConvolutionForwardAlgorithm(*m_cudnn, m_inT, *m_kernelT, *m_conv, m_outT, MaxAlgoCount, &calgo, algoPerf);
+			return cudnnFindConvolutionForwardAlgorithm(*m_cudnn, m_inT, *m_kernelT, *m_conv, m_outT, MaxAlgoCount, &calgo, algoPerf);
         };
         // find deterministic algorithm
         auto deterministicFinder = [&, this](int& calgo, cudnnConvolutionFwdAlgoPerf_t algoPerf[MaxAlgoCount]) -> cudnnStatus_t {
@@ -328,6 +328,7 @@ protected:
             CUDNN_CALL(cudnnSetConvolutionMathType(*m_conv, m_fwdAlgo.AlgoMathType));
         else
             CUDNN_CALL(cudnnSetConvolutionMathType(*m_conv, CUDNN_DEFAULT_MATH));
+
         // Perform forward convolution operation.
         CUDNN_CALL(cudnnConvolutionForward(
             *m_cudnn, &C::One, m_inT, ptr(in), *m_kernelT, ptr(kernel), *m_conv,
@@ -434,14 +435,14 @@ protected:
 			//fprintf(stderr, "- in static finder odd %d m_dataType %d\n", m_kernelT->isOdd(), m_dataType == CUDNN_DATA_HALF);
 
             // special case for half/odd filter
-            //if (m_kernelT->isOdd() && m_dataType == CUDNN_DATA_HALF)
-            //{
-            //    size_t tmpSize = 0;
-            //    (*algoPerf).algo = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
-            //    auto err = cudnnGetConvolutionBackwardFilterWorkspaceSize(*m_cudnn, m_inT, m_outT, *m_conv, *m_kernelT, (*algoPerf).algo, &tmpSize);
-            //    workspace.Resize((tmpSize + sizeof(ElemType) - 1) / sizeof(ElemType), 1);
-            //    return err;
-            //}
+            if (m_kernelT->isOdd() && m_dataType == CUDNN_DATA_HALF)
+            {
+                size_t tmpSize = 0;
+                (*algoPerf).algo = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
+                auto err = cudnnGetConvolutionBackwardFilterWorkspaceSize(*m_cudnn, m_inT, m_outT, *m_conv, *m_kernelT, (*algoPerf).algo, &tmpSize);
+                workspace.Resize((tmpSize + sizeof(ElemType) - 1) / sizeof(ElemType), 1);
+                return err;
+            }
 
             return cudnnFindConvolutionBackwardFilterAlgorithm(*m_cudnn, m_inT, m_outT, *m_conv, *m_kernelT, MaxAlgoCount, &calgo, algoPerf);
         };
@@ -554,7 +555,7 @@ private:
         // In initState, where memory allocation for nodes are not completed, we only run the algorithm with no workspace.
         // In the special case when m_forceDeterministicAlgorithms, we allocate some memory and use the deterministic algorithm.
         // In the special case when m_inputHasFreeDimension, we only run the algorithm with no workspace.
-        if (algo.autotuningState == AutotuningState::Init)
+        if (algo.autotuningState == AutotuningState::Init && m_forceDeterministicAlgorithms)
         {
             // find workspace size needed for finderEx and deterministic algorithm
             CUDNN_CALL(workspaceSizeFinder());
@@ -574,7 +575,7 @@ private:
    //             // This branch handles two cases: a) When first MB comes through, and b) When input has free dimensions.
    //             // If the handling of these two cases changes, we may need to create separate branches for them.
 
-			//	fprintf(stderr, "for init static finder call true\n");
+			//	//fprintf(stderr, "for init static finder call true\n");
    //             
    //             CUDNN_CALL(staticFinder(calgo, algoPerf, true));
    //             auto res = algoPerf;
@@ -585,15 +586,13 @@ private:
    //             // Thus we don't set maxAlgo records and those will be tuned later.
 
    //             algo.RecordAlgoBatchSizeWorkspaceSize(false, algo.selectedAlgo, batchSize, 0);
-			//	fprintf(stderr, "static finder result, algo %d, batchSize %d, workspace %d\n", algo.selectedAlgo, batchSize, workspace.BufferSize());
+			//	//fprintf(stderr, "static finder result, algo %d, batchSize %d, workspace %d\n", algo.selectedAlgo, batchSize, workspace.BufferSize());
 
    //             algo.autotuningState = m_inputHasFreeDimension ? AutotuningState::Running : AutotuningState::PendingTuning;
 			//}
-            return;
         }
-		
         // we allocate workspace and find algorithm if batchSize is higher than ever seen
-        if (algo.MaxAlgoMBSize == 0) // MaxAlgoMBSize is 0 only after Init. After this heavy tuning, MaxAlgoMBSize will be set to >0, thus we tune just once.
+        else if (algo.MaxAlgoMBSize == 0) // MaxAlgoMBSize is 0 only after Init. After this heavy tuning, MaxAlgoMBSize will be set to >0, thus we tune just once.
         {
             size_t curSize = workspace.BufferSize();
 
@@ -671,7 +670,9 @@ private:
             algo.RecordAlgoBatchSizeWorkspaceSize(false, algo.selectedAlgo, batchSize, workspace.BufferSize());
             algo.autotuningState = AutotuningState::Running;
         }
-        //return;
+#if _DEBUG
+		fprintf(stderr, "%s\n", algo.AlgoMathType == CUDNN_DEFAULT_MATH ? "default math" : "not default math");
+#endif
     }
 
     static ElemType* ptr(Mat& src)
