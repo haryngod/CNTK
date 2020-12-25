@@ -51,30 +51,30 @@ namespace CNTK.CNTKLibraryCSTrainingTest
                 // In case of CNTK test runs (runTest is set to a test name) data folders need to be set accordingly.
                 switch (runTest)
                 {
-                    //case "LogisticRegressionTest":
-                    //    Console.WriteLine($"======== running LogisticRegression.TrainAndEvaluate using {device.Type} ========");
-                    //    LogisticRegression.TrainAndEvaluate(device);
-                    //    break;
-                    //case "SimpleFeedForwardClassifierTest":
-                    //    Console.WriteLine($"======== running SimpleFeedForwardClassifierTest.TrainSimpleFeedForwardClassifier using {device.Type} ========");
-                    //    SimpleFeedForwardClassifierTest.TrainSimpleFeedForwardClassifier(device);
-                    //    break;
-                    //case "CifarResNetClassifierTest":
-                    //    Console.WriteLine($"======== running CifarResNet.TrainAndEvaluate using {device.Type} ========");
-                        
-                    //    if (args.Length > 1)
-                    //    {
-                    //        Console.WriteLine($"-------- running with test data in {args[1]} --------");
-                    //        // this test uses data from external folder, we execute this test with full data dir.
-                    //        CifarResNetClassifier.CifarDataFolder = TestCommon.TestDataDirPrefix;
-                    //    }
+                    case "LogisticRegressionTest":
+                        Console.WriteLine($"======== running LogisticRegression.TrainAndEvaluate using {device.Type} ========");
+                        LogisticRegression.TrainAndEvaluate(device);
+                        break;
+                    case "SimpleFeedForwardClassifierTest":
+                        Console.WriteLine($"======== running SimpleFeedForwardClassifierTest.TrainSimpleFeedForwardClassifier using {device.Type} ========");
+                        SimpleFeedForwardClassifierTest.TrainSimpleFeedForwardClassifier(device);
+                        break;
+                    case "CifarResNetClassifierTest":
+                        Console.WriteLine($"======== running CifarResNet.TrainAndEvaluate using {device.Type} ========");
 
-                    //    CifarResNetClassifier.TrainAndEvaluate(device, true);
-                    //    break;
-                    //case "LSTMSequenceClassifierTest":
-                    //    Console.WriteLine($"======== running LSTMSequenceClassifier.Train using {device.Type} ========");
-                    //    LSTMSequenceClassifier.Train(device);
-                    //    break;
+                        if (args.Length > 1)
+                        {
+                            Console.WriteLine($"-------- running with test data in {args[1]} --------");
+                            // this test uses data from external folder, we execute this test with full data dir.
+                            CifarResNetClassifier.CifarDataFolder = TestCommon.TestDataDirPrefix;
+                        }
+
+                        CifarResNetClassifier.TrainAndEvaluate(device, true);
+                        break;
+                    case "LSTMSequenceClassifierTest":
+                        Console.WriteLine($"======== running LSTMSequenceClassifier.Train using {device.Type} ========");
+                        LSTMSequenceClassifier.Train(device);
+                        break;
                     case "MNISTClassifierTest":
                         Console.WriteLine($"======== running MNISTClassifier.TrainAndEvaluate with Convnet using {device.Type} ========");
                         MNISTClassifier.TrainAndEvaluate(device, true, true);
@@ -124,13 +124,11 @@ namespace CNTK.CNTKLibraryCSTrainingTest
             //Console.WriteLine($"======== running SimpleFeedForwardClassifier.TrainSimpleFeedForwardClassifier using {device.Type} ========");
             //SimpleFeedForwardClassifierTest.TrainSimpleFeedForwardClassifier(device);
 
-            //Console.WriteLine($"======== running MNISTClassifier.TrainAndEvaluate using {device.Type} with MLP classifier ========");
-            //MNISTClassifier.TrainAndEvaluate(device, false, true);
+            Console.WriteLine($"======== running MNISTClassifier.TrainAndEvaluate using {device.Type} with MLP classifier ========");
+            MNISTClassifier.TrainAndEvaluate(device, false, true);
 
-            Console.WriteLine($"======== running MNISTClassifier.TrainAndEvaluate using {device.Type} with convolution neural network ========");
-            MNISTClassifier.TrainAndEvaluate(device, true, true);
-
-            Console.Read();
+            //Console.WriteLine($"======== running MNISTClassifier.TrainAndEvaluate using {device.Type} with convolution neural network ========");
+            //MNISTClassifier.TrainAndEvaluate(device, true, true);
 
             //if (device.Type == DeviceKind.GPU)
             //{
@@ -147,8 +145,10 @@ namespace CNTK.CNTKLibraryCSTrainingTest
             //    TransferLearning.TrainAndEvaluateWithAnimalData(device, true);
             //}
 
-            //Console.WriteLine($"======== running LSTMSequenceClassifier.Train using {device.Type} ========");
-            //LSTMSequenceClassifier.Train(device);
+            Console.WriteLine($"======== running LSTMSequenceClassifier.Train using {device.Type} ========");
+            LSTMSequenceClassifier.Train(device);
+
+            Console.ReadLine();
         }
     }
 }
