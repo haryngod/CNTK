@@ -45,6 +45,9 @@ namespace CNTK.CNTKLibraryCSTrainingTest
                 TestCommon.TestDataDirPrefix = "../../";
             }
 
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
+
             foreach (var device in devices)
             {
                 // Data folders of example classes are set for non-CNTK test runs.
@@ -94,8 +97,10 @@ namespace CNTK.CNTKLibraryCSTrainingTest
                         break;
                 }
             }
-
+            sw.Stop();
             Console.WriteLine("======== Train completes. ========");
+            Console.WriteLine("Elapsed time " + sw.ElapsedMilliseconds + " ms");
+            Console.ReadLine();
         }
 
         static bool ShouldRunOnGpu()
@@ -124,11 +129,11 @@ namespace CNTK.CNTKLibraryCSTrainingTest
             //Console.WriteLine($"======== running SimpleFeedForwardClassifier.TrainSimpleFeedForwardClassifier using {device.Type} ========");
             //SimpleFeedForwardClassifierTest.TrainSimpleFeedForwardClassifier(device);
 
-            Console.WriteLine($"======== running MNISTClassifier.TrainAndEvaluate using {device.Type} with MLP classifier ========");
-            MNISTClassifier.TrainAndEvaluate(device, false, true);
+            //Console.WriteLine($"======== running MNISTClassifier.TrainAndEvaluate using {device.Type} with MLP classifier ========");
+            //MNISTClassifier.TrainAndEvaluate(device, false, true);
 
-            //Console.WriteLine($"======== running MNISTClassifier.TrainAndEvaluate using {device.Type} with convolution neural network ========");
-            //MNISTClassifier.TrainAndEvaluate(device, true, true);
+            Console.WriteLine($"======== running MNISTClassifier.TrainAndEvaluate using {device.Type} with convolution neural network ========");
+            MNISTClassifier.TrainAndEvaluate(device, true, true);
 
             //if (device.Type == DeviceKind.GPU)
             //{
@@ -145,10 +150,8 @@ namespace CNTK.CNTKLibraryCSTrainingTest
             //    TransferLearning.TrainAndEvaluateWithAnimalData(device, true);
             //}
 
-            Console.WriteLine($"======== running LSTMSequenceClassifier.Train using {device.Type} ========");
-            LSTMSequenceClassifier.Train(device);
-
-            Console.ReadLine();
+            //Console.WriteLine($"======== running LSTMSequenceClassifier.Train using {device.Type} ========");
+            //LSTMSequenceClassifier.Train(device);
         }
     }
 }

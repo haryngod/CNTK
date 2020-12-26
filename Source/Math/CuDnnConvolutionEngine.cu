@@ -399,7 +399,6 @@ protected:
         //    CUDNN_CALL(cudnnSetConvolutionMathType(*m_conv, m_backDataAlgo.AlgoMathType));
         //else
         //    CUDNN_CALL(cudnnSetConvolutionMathType(*m_conv, CUDNN_DEFAULT_MATH));
-
         CUDNN_CALL(cudnnConvolutionBackwardData(
             *m_cudnn, &C::One, *m_kernelT, ptr(kernel), m_outT, ptr(srcGrad), *m_conv, m_backDataAlgo.selectedAlgo, ptr(workspace), workspace.BufferSize(), accumulateGradient ? &C::One : &C::Zero, m_inT, ptr(grad)));
     }
@@ -481,7 +480,6 @@ protected:
         //    CUDNN_CALL(cudnnSetConvolutionMathType(*m_conv, m_backFiltAlgo.AlgoMathType));
         //else
         //    CUDNN_CALL(cudnnSetConvolutionMathType(*m_conv, CUDNN_DEFAULT_MATH));
-
         CUDNN_CALL(cudnnConvolutionBackwardFilter(
             *m_cudnn, &C::One, m_inT, ptr(in), m_outT, ptr(srcGrad), *m_conv, m_backFiltAlgo.selectedAlgo, ptr(workspace), workspace.BufferSize(), accumulateGradient ? &C::One : &C::Zero, *m_kernelT, ptr(kernelGrad)));
     }
@@ -554,13 +552,12 @@ private:
         // In initState, where memory allocation for nodes are not completed, we only run the algorithm with no workspace.
         // In the special case when m_forceDeterministicAlgorithms, we allocate some memory and use the deterministic algorithm.
         // In the special case when m_inputHasFreeDimension, we only run the algorithm with no workspace.
-        if (algo.autotuningState == AutotuningState::Init && m_forceDeterministicAlgorithms)
-
+        if (algo.autotuningState == AutotuningState::Init)
         {
             // find workspace size needed for finderEx and deterministic algorithm
             CUDNN_CALL(workspaceSizeFinder());
-            //if (m_forceDeterministicAlgorithms)
-            //{
+            if (m_forceDeterministicAlgorithms)
+            {
                 workspace.Resize((algo.DeterministicAlgoWorkspaceSize + sizeof(ElemType) - 1) / sizeof(ElemType), 1, 0, false);
                 CUDNN_CALL(deterministicFinder(calgo, algoPerf));
                 assert(calgo == 1); // only one deterministic algorithm will be returned
@@ -568,21 +565,40 @@ private:
                 algo.selectedAlgo = (*res).algo;
                 algo.RecordAlgoBatchSizeWorkspaceSize(true, algo.selectedAlgo, batchSize, (*algoPerf).memory);
                 algo.autotuningState = AutotuningState::Running; // no further need for tuning since this is deterministic, directly enter running state
-    //        }
-    //        else
-    //        {
-    //            // This branch handles two cases: a) When first MB comes through, and b) When input has free dimensions.
-    //            // If the handling of these two cases changes, we may need to create separate branches for them.
-				//CUDNN_CALL(staticFinder(calgo, algoPerf, true));
-				//auto res = algoPerf;
-    //            algo.selectedAlgo = (*res).algo;
-    //            algo.maxMBSizeSeen = batchSize;
-    //            // Here MaxAlgoWorkspaceSize is temporarily storing 'possible' need changed by staticFinder.
-    //            // Thus we don't set maxAlgo records and those will be tuned later.
-    //            algo.RecordAlgoBatchSizeWorkspaceSize(false, algo.selectedAlgo, batchSize, 0);
-    //            algo.autotuningState = m_inputHasFreeDimension ? AutotuningState::Running : AutotuningState::PendingTuning;
-    //        }
-            return;  
+#if _DEBUG
+                fprintf(stderr, "Findbestalgo : Init : m_forceDeterministicAlgorithms\n");
+#endif
+                return;  
+			}
+            // This branch handles two cases: a) When first MB comes through, and b) When input has free dimensions.
+            // If the handling of these two cases changes, we may need to create separate branches for them.
+            else if (m_inputHasFreeDimension)
+            {
+				CUDNN_CALL(staticFinder(calgo, algoPerf, true));
+				auto res = algoPerf;
+                algo.selectedAlgo = (*res).algo;
+                algo.maxMBSizeSeen = batchSize;
+                // Here MaxAlgoWorkspaceSize is temporarily storing 'possible' need changed by staticFinder.
+                // Thus we don't set maxAlgo records and those will be tuned later.
+                algo.RecordAlgoBatchSizeWorkspaceSize(false, algo.selectedAlgo, batchSize, 0);
+                algo.autotuningState = AutotuningState::Running;
+#if _DEBUG
+                fprintf(stderr, "Findbestalgo : Init : m_inputHasFreeDimension\n");
+#endif
+                return;  
+            }
+//            else
+//            {
+//                CUDNN_CALL(staticFinder(calgo, algoPerf, false));
+//                auto res = algoPerf;
+//                algo.selectedAlgo = (*res).algo;
+//                algo.RecordAlgoBatchSizeWorkspaceSize(false, algo.selectedAlgo, batchSize, workspace.BufferSize());
+//                algo.autotuningState = AutotuningState::Running;
+//#if _DEBUG
+//                fprintf(stderr, "Findbestalgo : Init : static finder\n");
+//#endif
+//                return;  
+//			}
         }
         // we allocate workspace and find algorithm if batchSize is higher than ever seen
         if (algo.MaxAlgoMBSize == 0) // MaxAlgoMBSize is 0 only after Init. After this heavy tuning, MaxAlgoMBSize will be set to >0, thus we tune just once.
@@ -648,12 +664,19 @@ private:
                     algo.autotuningState = AutotuningState::Running;
                 }
             }
+#if _DEBUG
+            fprintf(stderr, "Findbestalgo : not init, algo.MaxAlgoMBSize == 0 : finder\n");
+#endif
         }
         // Use stored algo when batchsize go back to max. Likely happen when last batch in epoch lacking data
         else if (batchSize == algo.MaxAlgoMBSize && workspace.BufferSize() >= algo.MaxAlgoWorkspaceSize)
         {
             algo.RecordAlgoBatchSizeWorkspaceSize(false, algo.maxAlgo, batchSize, algo.MaxAlgoWorkspaceSize);
             algo.autotuningState = AutotuningState::Running;
+			
+#if _DEBUG
+            fprintf(stderr, "Findbestalgo : not init, batchSize == algo.MaxAlgoMBSize : no finder\n");
+#endif
         }
         else // use fast/static method to get algorithm when batchsize get smaller. Avoid severe slowdown when batchsize change frequently
         {
@@ -662,10 +685,10 @@ private:
             algo.selectedAlgo = (*res).algo;
             algo.RecordAlgoBatchSizeWorkspaceSize(false, algo.selectedAlgo, batchSize, workspace.BufferSize());
             algo.autotuningState = AutotuningState::Running;
-        }
 #if _DEBUG
-        fprintf(stderr, "%s\n", algo.AlgoMathType == CUDNN_DEFAULT_MATH ? "default math" : "not default math");
+            fprintf(stderr, "Findbestalgo : not init, last else : static finder\n");
 #endif
+        }
     }
 
     static ElemType* ptr(Mat& src)

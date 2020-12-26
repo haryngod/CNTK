@@ -89,7 +89,7 @@ namespace CNTK.CSTrainingExamples
             //
             const uint minibatchSize = 64;
             int outputFrequencyInMinibatches = 20, i = 0;
-            int epochs = 5;
+            int epochs = 50;
             while (epochs > 0)
             {
                 var minibatchData = minibatchSource.GetNextMinibatch(minibatchSize, device);
