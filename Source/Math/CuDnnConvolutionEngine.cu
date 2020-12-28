@@ -553,12 +553,13 @@ private:
         // In initState, where memory allocation for nodes are not completed, we only run the algorithm with no workspace.
         // In the special case when m_forceDeterministicAlgorithms, we allocate some memory and use the deterministic algorithm.
         // In the special case when m_inputHasFreeDimension, we only run the algorithm with no workspace.
-        if (algo.autotuningState == AutotuningState::Init && m_forceDeterministicAlgorithms)
+        if (algo.autotuningState == AutotuningState::Init) // && m_forceDeterministicAlgorithms)
         {
             // find workspace size needed for finderEx and deterministic algorithm
-            CUDNN_CALL(workspaceSizeFinder());
-            //if (m_forceDeterministicAlgorithms)
-            //{
+
+            if (m_forceDeterministicAlgorithms)
+            {
+                CUDNN_CALL(workspaceSizeFinder());
                 workspace.Resize((algo.DeterministicAlgoWorkspaceSize + sizeof(ElemType) - 1) / sizeof(ElemType), 1, 0, false);
                 CUDNN_CALL(deterministicFinder(calgo, algoPerf));
                 assert(calgo == 1); // only one deterministic algorithm will be returned
@@ -570,37 +571,41 @@ private:
                 fprintf(stderr, "Findbestalgo : Init : m_forceDeterministicAlgorithms\n");
 #endif
                 return;
-//			}
-//            // This branch handles two cases: a) When first MB comes through, and b) When input has free dimensions.
-//            // If the handling of these two cases changes, we may need to create separate branches for them.
-//            else if (m_inputHasFreeDimension)
-//            {
-//				CUDNN_CALL(staticFinder(calgo, algoPerf, true));
-//				auto res = algoPerf;
-//                algo.selectedAlgo = (*res).algo;
-//                algo.maxMBSizeSeen = batchSize;
-//                // Here MaxAlgoWorkspaceSize is temporarily storing 'possible' need changed by staticFinder.
-//                // Thus we don't set maxAlgo records and those will be tuned later.
-//                algo.RecordAlgoBatchSizeWorkspaceSize(false, algo.selectedAlgo, batchSize, 0);
-//                algo.autotuningState = AutotuningState::Running;
-//#if _DEBUG
-//                fprintf(stderr, "Findbestalgo : Init : m_inputHasFreeDimension\n");
-//#endif
-//                return;
-//            }
+			}
+             //This branch handles two cases: a) When first MB comes through, and b) When input has free dimensions.
+             //If the handling of these two cases changes, we may need to create separate branches for them.
+            else if (m_inputHasFreeDimension)
+            {
+                CUDNN_CALL(workspaceSizeFinder());
+				CUDNN_CALL(staticFinder(calgo, algoPerf, true));
+				auto res = algoPerf;
+                algo.selectedAlgo = (*res).algo;
+                algo.maxMBSizeSeen = batchSize;
+                // Here MaxAlgoWorkspaceSize is temporarily storing 'possible' need changed by staticFinder.
+                // Thus we don't set maxAlgo records and those will be tuned later.
+                algo.RecordAlgoBatchSizeWorkspaceSize(false, algo.selectedAlgo, batchSize, 0);
+                algo.autotuningState = AutotuningState::Running;
+#if _DEBUG
+                fprintf(stderr, "Findbestalgo : Init : m_inputHasFreeDimension\n");
+#endif
+                return;
+            }
 //            else
 //            {
-//                CUDNN_CALL(staticFinder(calgo, algoPerf, false));
+//                CUDNN_CALL(workspaceSizeFinder());
+//                CUDNN_CALL(staticFinder(calgo, algoPerf, true));
 //                auto res = algoPerf;
 //                algo.selectedAlgo = (*res).algo;
 //                algo.maxMBSizeSeen = batchSize;
-//                algo.RecordAlgoBatchSizeWorkspaceSize(true, algo.selectedAlgo, batchSize, (*algoPerf).memory);
+//                algo.RecordAlgoBatchSizeWorkspaceSize(false, algo.selectedAlgo, batchSize, 0); // (*algoPerf).memory);
 //                algo.autotuningState = AutotuningState::PendingTuning;
 //#if _DEBUG
 //                fprintf(stderr, "Findbestalgo : Init : static finder\n");
+//                fprintf(stderr, "                      %d %d %d\n", batchSize, algo.MaxAlgoMBSize, (*algoPerf).memory);
 //#endif
+//                return;
 //			}
-//            return;
+
         }
         // we allocate workspace and find algorithm if batchSize is higher than ever seen
         if (algo.MaxAlgoMBSize == 0) // MaxAlgoMBSize is 0 only after Init. After this heavy tuning, MaxAlgoMBSize will be set to >0, thus we tune just once.

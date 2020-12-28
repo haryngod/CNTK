@@ -88,7 +88,7 @@ namespace CNTK.CSTrainingExamples
 
             //
             const uint minibatchSize = 64;
-            int outputFrequencyInMinibatches = 20, i = 0;
+            int outputFrequencyInMinibatches = 10, i = 0;
             int epochs = 50;
             while (epochs > 0)
             {
